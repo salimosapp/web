@@ -1,0 +1,41 @@
+<button class="volver" hx-get="/eventos" hx-target="#contenido" hx-swap="innerHTML" hx-push-url="true">
+    ← Volver a la agenda
+</button>
+
+<article class="detalle">
+    {% if evento.imagen_url %}
+    <img src="/static/{{ evento.imagen_url }}" alt="{{ evento.titulo }}">
+    {% endif %}
+
+    <div class="cuerpo">
+        <span class="categoria">{{ evento.categoria or "Evento" }}</span>
+        <h1>{{ evento.titulo }}</h1>
+
+        <div class="fila">
+            <div class="etiqueta">Fecha y hora</div>
+            <div class="valor">{{ evento.fecha_hora }}</div>
+        </div>
+
+        {% if evento.lugar %}
+        <div class="fila">
+            <div class="etiqueta">Lugar</div>
+            <div class="valor">{{ evento.lugar }}</div>
+        </div>
+        {% endif %}
+
+        {% if evento.precio %}
+        <div class="fila">
+            <div class="etiqueta">Entrada</div>
+            <div class="valor">{{ evento.precio }}</div>
+        </div>
+        {% endif %}
+
+        {% if evento.descripcion %}
+        <p class="descripcion">{{ evento.descripcion }}</p>
+        {% endif %}
+
+        {% if evento.link_fuente %}
+        <a class="fuente" href="{{ evento.link_fuente }}" target="_blank">Ver información original →</a>
+        {% endif %}
+    </div>
+</article>
