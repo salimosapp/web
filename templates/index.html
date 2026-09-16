@@ -3,26 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Salimos · Agenda cultural de Berisso</title>
+    <title>¿Salimos? · Agenda cultural de Berisso</title>
+
+    {# Tipografía oficial: Nunito Sans (Google Fonts), pesos 400 a 800. #}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700;6..12,800&display=swap" rel="stylesheet">
+
+    {# Iconos lineart minimalistas (Lucide). #}
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 
     {# htmx se carga por CDN: permite navegar (links, botones) sin recargar. #}
     <script src="https://unpkg.com/htmx.org"></script>
 
     <style>
         :root {
-            --fondo: #faf7f2;
+            --azul-oscuro: #0d1f3c;
+            --azul-medio: #16345f;
+            --azul-claro: #2b5a9e;
+            --verde: #1a7a3c;
+            --fondo: #f2f4f7;
+            --fondo-alt: #dedee4;
             --superficie: #ffffff;
-            --texto: #1f2937;
-            --texto-suave: #6b7280;
-            --primario: #b45309;      /* ámbar/naranja típico de cartel cultural */
-            --primario-oscuro: #92400e;
-            --borde: #e7e0d5;
+            --texto: #0d1f3c;
+            --texto-suave: #5b6472;
+            --borde: #e4e7ec;
+            --celeste-palido: #e6eef8;
+            --sombra: 0 2px 10px rgba(13, 31, 60, 0.07);
+            --sombra-hover: 0 10px 26px rgba(13, 31, 60, 0.16);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: Georgia, "Times New Roman", serif;
+            font-family: "Nunito Sans", system-ui, -apple-system, sans-serif;
             background: var(--fondo);
             color: var(--texto);
             min-height: 100vh;
@@ -30,115 +44,441 @@
             flex-direction: column;
         }
 
-        /* Encabezado sencillo del sitio público */
-        header {
-            background: var(--superficie);
-            border-bottom: 1px solid var(--borde);
-            padding: 1.2rem 1.5rem;
+        /* ---------------- Hero ----------------
+           Foto real de la ciudad + degradé azul semitransparente encima,
+           para que el texto blanco se lea bien sin tapar la foto. */
+        .hero {
+            position: relative;
+            min-height: 320px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 3rem 1.5rem;
+            color: #ffffff;
+            background:
+                linear-gradient(180deg, rgba(13, 31, 60, 0.55) 0%, rgba(22, 52, 95, 0.82) 100%),
+                url("/static/img/eventos/berisso_portada.jpg") center / cover no-repeat;
+            background-color: var(--azul-medio);
         }
-        header .marca { font-size: 1.6rem; font-weight: 700; color: var(--primario); text-decoration: none; }
-        header .eslogan { color: var(--texto-suave); font-size: 0.95rem; }
 
-        /* El contenido principal: acá htmx inyecta los parciales */
+        .hero h1 {
+            font-size: clamp(2.4rem, 7vw, 4rem);
+            font-weight: 800;
+            line-height: 1.05;
+            letter-spacing: -0.01em;
+        }
+
+        .hero p {
+            margin-top: 0.7rem;
+            font-size: clamp(1rem, 2.4vw, 1.25rem);
+            font-weight: 400;
+            opacity: 0.88;
+        }
+
+        /* ---------------- Sección de filtros ---------------- */
+        .filtros {
+            max-width: 1180px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 1.75rem 1.5rem 0.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.1rem;
+        }
+
+        .pildoras {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.55rem;
+        }
+
+        /* Píldora de categoría */
+        a.pildora {
+            text-decoration: none;
+            background: var(--superficie);
+            color: var(--azul-medio);
+            border-radius: 8px;
+            padding: 0.5rem 1.25rem;
+            font-weight: 700;
+            font-size: 0.92rem;
+            box-shadow: var(--sombra);
+            border: 1px solid transparent;
+            transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+        }
+        a.pildora:hover { color: var(--azul-claro); box-shadow: var(--sombra-hover); }
+        a.pildora.activa {
+            background: var(--azul-medio);
+            color: #ffffff;
+        }
+
+        /* Píldora de día (estilo calendario) */
+        a.dia {
+            text-decoration: none;
+            background: var(--superficie);
+            color: var(--azul-medio);
+            border-radius: 8px;
+            padding: 0.45rem 0.9rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 62px;
+            box-shadow: var(--sombra);
+            border: 1px solid transparent;
+            transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        a.dia:hover { color: var(--azul-claro); box-shadow: var(--sombra-hover); }
+        a.dia.activa {
+            background: var(--azul-medio);
+            color: #ffffff;
+        }
+        a.dia .dia-semana { font-size: 0.7rem; font-weight: 600; text-transform: lowercase; opacity: 0.85; }
+        a.dia .dia-numero { font-size: 1.4rem; font-weight: 800; line-height: 1.2; }
+        a.dia .dia-mes { font-size: 0.68rem; font-weight: 700; text-transform: lowercase; opacity: 0.85; }
+
+        /* Buscador simple: input + botón cuadrado con lupa */
+        form.buscador {
+            display: flex;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: var(--sombra);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        form.buscador input {
+            flex: 1;
+            border: none;
+            padding: 0.6rem 0.9rem;
+            font-family: inherit;
+            font-size: 0.9rem;
+            color: var(--texto);
+            background: var(--superficie);
+            outline: none;
+        }
+        form.buscador input::placeholder { color: #9aa3b0; }
+        form.buscador button {
+            background: var(--azul-medio);
+            border: none;
+            width: 42px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s ease;
+            color: #ffffff;
+        }
+        form.buscador button:hover { background: var(--azul-claro); }
+        form.buscador button i,
+        form.buscador button svg { color: #ffffff; width: 18px; height: 18px; }
+
+        /* ---------------- Contenido principal ---------------- */
         main {
             flex: 1;
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 2rem 1.5rem;
             width: 100%;
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 1.75rem 1.5rem 2.5rem;
         }
 
-        h1 { font-size: 1.6rem; margin-bottom: 0.5rem; }
-        .subtitulo { color: var(--texto-suave); margin-bottom: 1.75rem; font-style: italic; }
+        .grupo { margin-bottom: 2.5rem; }
 
-        /* Grilla de tarjetas de eventos */
+        .grupo-titulo {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--azul-oscuro);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+        }
+        .grupo-titulo::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: var(--borde);
+        }
+        .grupo-titulo .cuenta {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--texto-suave);
+        }
+
         .grilla {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
             gap: 1.5rem;
         }
 
+        /* Tarjeta de evento */
         .tarjeta {
             background: var(--superficie);
-            border: 1px solid var(--borde);
-            border-radius: 12px;
+            border-radius: 14px;
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            box-shadow: var(--sombra);
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
         }
-        .tarjeta img { width: 100%; height: 180px; object-fit: cover; display: block; background: #eee; }
-        .tarjeta .cuerpo { padding: 1rem; display: flex; flex-direction: column; gap: 0.4rem; flex: 1; }
+        .tarjeta:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--sombra-hover);
+        }
 
-        .categoria {
+        .tarjeta-imagen {
+            position: relative;
+            aspect-ratio: 3 / 4;
+            background: var(--fondo-alt);
+        }
+        .tarjeta-imagen img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .tarjeta-imagen .sin-imagen {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #b4bdc9;
+        }
+        .tarjeta-imagen .sin-imagen i,
+        .tarjeta-imagen .sin-imagen svg { width: 40px; height: 40px; }
+
+        .etiqueta-categoria {
             align-self: flex-start;
-            background: #fef3c7;
-            color: var(--primario-oscuro);
+            background: var(--celeste-palido);
+            color: var(--azul-medio);
             border-radius: 999px;
             font-size: 0.72rem;
             font-weight: 700;
-            padding: 0.15rem 0.6rem;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
+            padding: 0.25rem 0.75rem;
+            letter-spacing: 0.02em;
+            margin-bottom: 0.4rem;
         }
-        .tarjeta h2 { font-size: 1.05rem; line-height: 1.3; }
-        .tarjeta .fecha { color: var(--primario-oscuro); font-weight: 600; font-size: 0.9rem; }
-        .tarjeta .lugar, .tarjeta .precio { color: var(--texto-suave); font-size: 0.85rem; }
 
-        /* Botón "ver más" que navega con htmx sin recargar */
-        .ver-mas {
+        .tarjeta-cuerpo {
+            padding: 1.05rem 1.1rem 1.15rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            flex: 1;
+        }
+
+        .tarjeta-cuerpo h3 {
+            font-size: 1.08rem;
+            font-weight: 800;
+            line-height: 1.3;
+            color: var(--azul-oscuro);
+        }
+
+        .tarjeta-separador {
+            height: 1px;
+            background: var(--borde);
+            margin: 0.55rem 0 0.7rem;
+        }
+
+        .tarjeta-datos {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 0.9rem;
+        }
+        .dato {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            font-size: 0.88rem;
+            color: var(--texto-suave);
+        }
+        .dato i,
+        .dato svg { color: var(--azul-claro); flex-shrink: 0; }
+        .dato.precio { color: var(--verde); font-weight: 700; }
+        .dato.precio i,
+        .dato.precio svg { color: var(--verde); }
+
+        a.ir-pagina {
             margin-top: auto;
-            align-self: flex-start;
-            background: none;
-            border: 1px solid var(--primario);
-            color: var(--primario-oscuro);
-            border-radius: 8px;
-            padding: 0.45rem 0.9rem;
-            font-size: 0.85rem;
-            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            color: var(--azul-medio);
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-decoration: none;
         }
-        .ver-mas:hover { background: var(--primario); color: #fff; }
+        a.ir-pagina:hover { color: var(--azul-claro); }
+        a.ir-pagina i,
+        a.ir-pagina svg { width: 16px; height: 16px; transition: transform 0.15s ease; }
+        a.ir-pagina:hover i,
+        a.ir-pagina:hover svg { transform: translateX(3px); }
 
-        /* Detalle de un evento */
-        .detalle { background: var(--superficie); border: 1px solid var(--borde); border-radius: 14px; overflow: hidden; }
-        .detalle img { width: 100%; max-height: 340px; object-fit: cover; display: block; background: #eee; }
+        .sin-resultados {
+            text-align: center;
+            color: var(--texto-suave);
+            padding: 3rem 1rem;
+            font-size: 1.05rem;
+        }
+
+        /* ---------------- Detalle (htmx) ---------------- */
+        .detalle { background: var(--superficie); border-radius: 14px; overflow: hidden; box-shadow: var(--sombra); }
+        .detalle img { width: 100%; max-height: 340px; object-fit: cover; display: block; background: var(--fondo-alt); }
         .detalle .cuerpo { padding: 1.75rem; }
-        .detalle h1 { margin-bottom: 0.75rem; }
+        .detalle h2 { margin-bottom: 0.75rem; color: var(--azul-oscuro); }
         .detalle .fila { margin-bottom: 0.5rem; }
         .detalle .etiqueta { color: var(--texto-suave); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
         .detalle .valor { font-size: 1.05rem; }
         .detalle .descripcion { margin-top: 1rem; line-height: 1.55; }
-        .detalle a.fuente { display: inline-block; margin-top: 1.25rem; color: var(--primario-oscuro); }
-
-        /* Botón volver */
+        .detalle a.fuente { display: inline-block; margin-top: 1.25rem; color: var(--azul-medio); font-weight: 700; }
         button.volver {
-            background: none; border: none; color: var(--primario-oscuro);
-            font-size: 0.95rem; cursor: pointer; margin-bottom: 1rem;
-            text-decoration: underline;
+            background: var(--superficie); border: none; color: var(--azul-medio);
+            font-size: 0.95rem; cursor: pointer; margin-bottom: 1rem; font-weight: 700;
+            text-decoration: underline; font-family: inherit;
         }
 
+        /* ---------------- Footer ---------------- */
         footer {
-            border-top: 1px solid var(--borde);
+            background: var(--azul-oscuro);
+            color: #ffffff;
             text-align: center;
-            padding: 1.2rem;
-            color: var(--texto-suave);
-            font-size: 0.85rem;
+            padding: 1.4rem 1.5rem;
+            font-size: 0.9rem;
+        }
+        footer strong { color: #ffffff; }
+        footer .organismo { opacity: 0.75; margin-top: 0.2rem; font-size: 0.8rem; }
+
+        @media (max-width: 640px) {
+            .filtros { padding-top: 1.25rem; }
+            .grilla { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 1.1rem; }
         }
     </style>
 </head>
 
 <body>
-    <header>
-        <a class="marca" href="/" hx-get="/eventos" hx-target="#contenido" hx-push-url="true">Salimos</a>
-        <span class="eslogan">Agenda cultural de Berisso</span>
+    {# ---------- Header / Hero ---------- #}
+    <header class="hero">
+        <div>
+            <h1>¿Salimos?</h1>
+            <p>La agenda cultural de Berisso, en un solo lugar</p>
+        </div>
     </header>
 
-    {# Al entrar, la grilla de eventos se carga sola. #}
-    <main id="contenido" hx-get="/eventos" hx-trigger="load">
+    {# ---------- Filtros ---------- #}
+    <section class="filtros">
+        {# Píldoras de categoría (Cine, Teatro, Música...) #}
+        <nav class="pildoras" aria-label="Filtrar por categoría">
+            <a
+                class="pildora {% if not categoria_activa %}activa{% endif %}"
+                href="/?{{ {'categoria': '', 'dia': dia_activo, 'q': busqueda}|urlencode }}">Todas</a>
+            {% for categoria in categorias %}
+            <a
+                class="pildora {% if categoria_activa|lower == categoria|lower %}activa{% endif %}"
+                href="/?{{ {'categoria': categoria, 'dia': dia_activo, 'q': busqueda}|urlencode }}">{{ categoria_bonita(categoria) }}</a>
+            {% endfor %}
+        </nav>
+
+        {# Píldoras de días (estilo calendario); sin botón "todas": no filtrar = todas #}
+        <nav class="pildoras" aria-label="Filtrar por día">
+            {% for fecha in dias %}
+            <a
+                class="dia {% if dia_activo == fecha.isoformat() %}activa{% endif %}"
+                href="/?{{ {'categoria': categoria_activa, 'dia': fecha.isoformat(), 'q': busqueda}|urlencode }}">
+                <span class="dia-semana">{{ nombre_dia_corto(fecha) }}</span>
+                <span class="dia-numero">{{ fecha.day }}</span>
+                <span class="dia-mes">{{ nombre_mes_corto(fecha) }}</span>
+            </a>
+            {% endfor %}
+        </nav>
+
+        {# Buscador #}
+        <form class="buscador" method="get" action="/" role="search">
+            <input type="hidden" name="categoria" value="{{ categoria_activa }}">
+            <input type="hidden" name="dia" value="{{ dia_activo }}">
+            <input
+                type="search"
+                name="q"
+                value="{{ busqueda }}"
+                placeholder="Buscar por nombre, lugar o categoría"
+                aria-label="Buscar eventos">
+            <button type="submit" aria-label="Buscar"><i data-lucide="search"></i></button>
+        </form>
+    </section>
+
+    {# ---------- Eventos agrupados por día ---------- #}
+    <main>
+        {% if agrupados %}
+            {% for fecha, lista in agrupados %}
+            <section class="grupo">
+                <h2 class="grupo-titulo">
+                    {{ encabezado_dia(fecha, lista|length) }}
+                </h2>
+                <div class="grilla">
+                    {% for evento in lista %}
+                    <article class="tarjeta">
+                        <div class="tarjeta-imagen">
+                            {% if evento.imagen_url %}
+                            <img src="{{ evento.imagen_url }}" alt="{{ evento.titulo }}" loading="lazy">
+                            {% else %}
+                            <div class="sin-imagen"><i data-lucide="image-off"></i></div>
+                            {% endif %}
+                        </div>
+
+                        <div class="tarjeta-cuerpo">
+                            <span class="etiqueta-categoria">{{ categoria_bonita(evento.categoria) or "Evento" }}</span>
+                            <h3>{{ evento.titulo }}</h3>
+                            <div class="tarjeta-separador"></div>
+                            <div class="tarjeta-datos">
+                                <div class="dato">
+                                    <i data-lucide="clock"></i>
+                                    <span>{{ hora_display(evento.fecha_hora) }}</span>
+                                </div>
+                                {% if evento.lugar %}
+                                <div class="dato">
+                                    <i data-lucide="map-pin"></i>
+                                    <span>{{ evento.lugar }}</span>
+                                </div>
+                                {% endif %}
+                                {% set precio = precio_display(evento.precio) %}
+                                {% if precio %}
+                                <div class="dato precio">
+                                    <i data-lucide="ticket"></i>
+                                    <span>{{ precio }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <a
+                                class="ir-pagina"
+                                href="{{ evento.link_fuente or '#' }}"
+                                target="_blank"
+                                rel="noopener noreferrer">Ir a la página <i data-lucide="arrow-right"></i></a>
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endfor %}
+        {% else %}
+            <p class="sin-resultados">No encontramos eventos con esos filtros. Probá de nuevo.</p>
+        {% endif %}
     </main>
 
-    <footer>Salimos · eventos culturales de Berisso</footer>
+    <footer>
+        <strong>¿Salimos?</strong> · Agenda cultural de Berisso
+        <div class="organismo">Municipalidad de Berisso</div>
+    </footer>
+
+    {# Lucide reemplaza los <i data-lucide> por SVGs al cargar. #}
+    <script>
+        if (window.lucide) lucide.createIcons();
+
+        // Si htmx inyecta contenido nuevo (detalle de evento), regeneramos iconos.
+        document.addEventListener("htmx:afterSwap", function () {
+            if (window.lucide) lucide.createIcons();
+        });
+    </script>
 </body>
 </html>
