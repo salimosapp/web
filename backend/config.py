@@ -21,3 +21,7 @@ DB_PORT = os.getenv("DB_PORT", "5432")
 DB_NAME = os.getenv("DB_NAME", "berisso_cultura")
 DB_USER = os.getenv("DB_USER", "postgres")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
+
+# Postgres administrados (Neon, Supabase) exigen conexión cifrada.
+# Vacío = comportamiento por defecto de psycopg2, que sirve para tu Postgres local.
+DB_SSLMODE = os.getenv("DB_SSLMODE")

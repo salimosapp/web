@@ -31,6 +31,16 @@ def categoria_bonita(categoria: str | None) -> str | None:
     return " ".join(palabra.capitalize() for palabra in categoria.split())
 
 
+def normalizar_categoria(categoria: str | None) -> str:
+    """
+    Deja una categoría en una forma comparable: sin espacios sobrantes y en
+    minúsculas. La usan el filtro de la web y la plantilla para que elegir una
+    categoría siempre encuentre eventos y la píldora quede marcada como activa
+    (si no, no hay forma de volver a "Todas").
+    """
+    return str(categoria or "").strip().casefold()
+
+
 def obtener_categorias() -> list[str]:
     """Categorías de los eventos aprobados y futuros (para las píldoras)."""
     conexion = conectar()
@@ -88,8 +98,8 @@ def obtener_eventos_aprobados(
     parametros: list = []
 
     if categoria:
-        condiciones.append("lower(categoria) = lower(%s)")
-        parametros.append(categoria)
+        condiciones.append("lower(btrim(categoria)) = %s")
+        parametros.append(normalizar_categoria(categoria))
 
     if dia:
         condiciones.append("fecha_hora::date = %s")

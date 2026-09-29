@@ -173,6 +173,22 @@
         form.buscador button i,
         form.buscador button svg { color: #ffffff; width: 18px; height: 18px; }
 
+        /* Enlace para limpiar todos los filtros de una sola vez */
+        .limpiar-filtros {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            color: var(--texto-suave);
+            font-size: 0.88rem;
+            font-weight: 700;
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: color 0.15s ease, border-color 0.15s ease;
+        }
+        .limpiar-filtros:hover { color: var(--azul-medio); border-bottom-color: currentColor; }
+        .limpiar-filtros i,
+        .limpiar-filtros svg { width: 16px; height: 16px; }
+
         /* ---------------- Contenido principal ---------------- */
         main {
             flex: 1;
@@ -368,24 +384,33 @@
 
     {# ---------- Filtros ---------- #}
     <section class="filtros">
-        {# Píldoras de categoría (Cine, Teatro, Música...) #}
+        {# Píldoras de categoría (Cine, Teatro, Música...).
+           La píldora que está activa se enlaza a sí misma quitando su categoría,
+           así que un clic la desactiva y se vuelve a "Todas". #}
         <nav class="pildoras" aria-label="Filtrar por categoría">
             <a
                 class="pildora {% if not categoria_activa %}activa{% endif %}"
-                href="/?{{ {'categoria': '', 'dia': dia_activo, 'q': busqueda}|urlencode }}">Todas</a>
+                href="{{ url_filtros(categoria='') }}"
+                {% if not categoria_activa %}aria-current="true"{% endif %}>Todas</a>
             {% for categoria in categorias %}
+            {% set elegida = misma_categoria(categoria_activa, categoria) %}
             <a
-                class="pildora {% if categoria_activa|lower == categoria|lower %}activa{% endif %}"
-                href="/?{{ {'categoria': categoria, 'dia': dia_activo, 'q': busqueda}|urlencode }}">{{ categoria_bonita(categoria) }}</a>
+                class="pildora {% if elegida %}activa{% endif %}"
+                href="{{ url_filtros(categoria='' if elegida else categoria) }}"
+                {% if elegida %}aria-current="true"{% endif %}>{{ categoria_bonita(categoria) }}</a>
             {% endfor %}
         </nav>
 
-        {# Píldoras de días (estilo calendario); sin botón "todas": no filtrar = todas #}
+        {# Píldoras de días (estilo calendario). Mismo criterio: al clickear el
+           día que ya está seleccionado se lo desactiva (vuelve a todos). #}
         <nav class="pildoras" aria-label="Filtrar por día">
             {% for fecha in dias %}
+            {% set iso = fecha.isoformat() %}
+            {% set elegido = dia_activo == iso %}
             <a
-                class="dia {% if dia_activo == fecha.isoformat() %}activa{% endif %}"
-                href="/?{{ {'categoria': categoria_activa, 'dia': fecha.isoformat(), 'q': busqueda}|urlencode }}">
+                class="dia {% if elegido %}activa{% endif %}"
+                href="{{ url_filtros(dia='' if elegido else iso) }}"
+                {% if elegido %}aria-current="true"{% endif %}>
                 <span class="dia-semana">{{ nombre_dia_corto(fecha) }}</span>
                 <span class="dia-numero">{{ fecha.day }}</span>
                 <span class="dia-mes">{{ nombre_mes_corto(fecha) }}</span>
@@ -393,7 +418,7 @@
             {% endfor %}
         </nav>
 
-        {# Buscador #}
+        {# Buscador (conserva los filtros de categoría y día) #}
         <form class="buscador" method="get" action="/" role="search">
             <input type="hidden" name="categoria" value="{{ categoria_activa }}">
             <input type="hidden" name="dia" value="{{ dia_activo }}">
@@ -405,6 +430,13 @@
                 aria-label="Buscar eventos">
             <button type="submit" aria-label="Buscar"><i data-lucide="search"></i></button>
         </form>
+
+        {# Salida de emergencia: aparece con cualquier filtro puesto y limpia todo. #}
+        {% if categoria_activa or dia_activo or busqueda %}
+        <a class="limpiar-filtros" href="/">
+            <i data-lucide="x"></i> Quitar todos los filtros
+        </a>
+        {% endif %}
     </section>
 
     {# ---------- Eventos agrupados por día ---------- #}

@@ -18,6 +18,8 @@ import os
 # Agregamos la raíz al path para poder importar el paquete "backend".
 sys.path.insert(0, os.path.dirname(__file__))
 
+from urllib.parse import urlencode
+
 from flask import Flask, render_template, request, abort, Response
 
 from backend.eventos import (
@@ -26,6 +28,7 @@ from backend.eventos import (
     obtener_eventos_aprobados,
     obtener_evento_por_id,
     categoria_bonita,
+    normalizar_categoria,
 )
 from backend.formato import (
     nombre_dia_corto,
@@ -49,6 +52,17 @@ def agrupar_por_dia(eventos: list[dict]) -> list[tuple]:
         fecha = evento["fecha_hora"].date()
         grupos.setdefault(fecha, []).append(evento)
     return sorted(grupos.items())
+
+
+def misma_categoria(elegida: str | None, categoria: str | None) -> bool:
+    """
+    True si la categoría seleccionada en la URL es la misma que la de la
+    píldora. Compara sin distinguir mayúsculas ni espacios, igual que el
+    filtro de la base, para que la píldora activa siempre quede marcada.
+    """
+    if not normalizar_categoria(elegida):
+        return False
+    return normalizar_categoria(elegida) == normalizar_categoria(categoria)
 
 
 # --- Rutas ---
@@ -127,6 +141,28 @@ def _categoria_bonita(categoria):
     return categoria_bonita(categoria)
 
 
+@app.template_global()
+def url_filtros(**cambios):
+    """
+    Arma la URL de la home conservando los filtros actuales y aplicando los
+    cambios pedidos; los filtros que quedan vacíos se omiten del querystring.
+
+    Es lo que hace reversibles las píldoras: la píldora activa de una categoría
+    (o de un día) se enlaza a la MISMA url sin ese filtro, así que un clic la
+    desactiva y se vuelve a "Todas". También la usa el buscador.
+    """
+    filtros = {
+        "categoria": request.args.get("categoria", "").strip(),
+        "dia": request.args.get("dia", "").strip(),
+        "q": request.args.get("q", "").strip(),
+    }
+    filtros.update(cambios)
+    activos = {clave: valor for clave, valor in filtros.items() if valor}
+    if not activos:
+        return "/"
+    return "/?" + urlencode(activos)
+
+
 @app.context_processor
 def utilidades_de_plantilla():
     """Expone los helpers de fechas y categorías a las plantillas."""
@@ -137,10 +173,17 @@ def utilidades_de_plantilla():
         "hora_display": hora_display,
         "precio_display": precio_display,
         "categoria_bonita": categoria_bonita,
+        "misma_categoria": misma_categoria,
     }
 
 
 # Si ejecutamos este archivo directamente, corre el servidor de desarrollo.
 # Puerto 5001 para poder tener la web y el panel admin (5000) a la vez.
+# En Render el puerto lo inyecta la plataforma en la variable PORT, así que
+# ahí el 5001 no se usa. El host 0.0.0.0 permite entrar desde el celular en la
+# misma red.
 if __name__ == "__main__":
-    app.run(port=5001)
+    app.run(
+        host=os.getenv("HOST", "0.0.0.0"),
+        port=int(os.getenv("PORT", "5001")),
+    )
