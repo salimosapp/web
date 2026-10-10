@@ -14,6 +14,7 @@ día con su encabezado ('Viernes, 11 de septiembre · 1 evento').
 
 import sys
 import os
+from datetime import datetime
 
 # Agregamos la raíz al path para poder importar el paquete "backend".
 sys.path.insert(0, os.path.dirname(__file__))
@@ -21,6 +22,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from urllib.parse import urlencode
 
 from flask import Flask, render_template, request, abort, Response
+from psycopg2 import Binary
 
 from backend.eventos import (
     obtener_categorias,
@@ -38,6 +40,10 @@ from backend.formato import (
     precio_display,
 )
 from backend.db import conectar
+from backend.solicitudes import solicitudes_habilitadas, crear_solicitud
+
+# Tamaño máximo permitido para la imagen que sube el público (6 MB).
+MAX_IMAGEN = 6 * 1024 * 1024
 
 app = Flask(__name__)
 
@@ -90,6 +96,7 @@ def root():
         categoria_activa=categoria,
         dia_activo=dia,
         busqueda=busqueda,
+        solicitudes_activas=solicitudes_habilitadas(),
     )
 
 
@@ -103,6 +110,78 @@ def evento_detalle(evento_id: int):
     if evento is None:
         abort(404)
     return render_template("partials/evento_detalle.html", evento=evento)
+
+
+@app.route("/solicitudes", methods=["POST"])
+def recibir_solicitud():
+    """
+    Recibe la solicitud del botón flotante y la guarda para que el admin la
+    revise. Solo disponible si el panel prendió el interruptor
+    (`solicitudes_habilitadas`), si no es 404.
+    """
+    if not solicitudes_habilitadas():
+        abort(404)
+
+    def respuesta(ok: bool, mensaje: str, codigo: int = 200):
+        return (
+            render_template(
+                "partials/solicitud_respuesta.html",
+                ok=ok,
+                mensaje=mensaje,
+            ),
+            codigo,
+        )
+
+    # Trampa para bots: este campo lo ve nadie (está oculto). Si viene lleno,
+    # es un robot: respondemos igual pero descartamos todo en silencio.
+    if request.form.get("website"):
+        return respuesta(True, "¡Gracias! Recibimos tu solicitud.")
+
+    titulo = request.form.get("titulo", "").strip()
+    fecha = request.form.get("fecha", "").strip()
+    hora = request.form.get("hora", "").strip() or "00:00"
+
+    if not titulo or not fecha:
+        return respuesta(False, "Completá al menos el título y la fecha.", 400)
+
+    try:
+        fecha_hora = datetime.strptime(f"{fecha} {hora}", "%Y-%m-%d %H:%M")
+    except ValueError:
+        return respuesta(False, "La fecha o la hora no son válidas.", 400)
+
+    imagen_datos = None
+    imagen_mime = None
+    archivo = request.files.get("imagen")
+    if archivo and archivo.filename:
+        contenido = archivo.read()
+        if len(contenido) > MAX_IMAGEN:
+            return respuesta(False, "La imagen es muy pesada (máximo 6 MB).", 400)
+        imagen_datos = Binary(contenido)
+        imagen_mime = archivo.mimetype or None
+
+    try:
+        crear_solicitud(
+            {
+                "titulo": titulo,
+                "fecha_hora": fecha_hora,
+                "lugar": request.form.get("lugar", "").strip() or None,
+                "categoria": request.form.get("categoria", "").strip() or None,
+                "precio": request.form.get("precio", "").strip() or None,
+                "descripcion": request.form.get("descripcion", "").strip() or None,
+                "link_fuente": request.form.get("link_fuente", "").strip() or None,
+                "contacto": request.form.get("contacto", "").strip() or None,
+                "imagen_datos": imagen_datos,
+                "imagen_mime": imagen_mime,
+            }
+        )
+    except Exception:
+        return respuesta(
+            False,
+            "No pudimos registrar la solicitud. Probá de nuevo más tarde.",
+            500,
+        )
+
+    return respuesta(True, "¡Gracias! Recibimos tu solicitud. El equipo de la agenda la va a revisar.")
 
 
 @app.route("/imagenes/eventos/<int:evento_id>")

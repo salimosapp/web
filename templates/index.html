@@ -201,7 +201,7 @@
         .grupo { margin-bottom: 2.5rem; }
 
         .grupo-titulo {
-            font-size: 1.15rem;
+            font-size: 1.4rem;
             font-weight: 800;
             color: var(--azul-oscuro);
             margin-bottom: 1rem;
@@ -217,7 +217,7 @@
         }
         .grupo-titulo .cuenta {
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 0.98rem;
             color: var(--texto-suave);
         }
 
@@ -244,25 +244,28 @@
 
         .tarjeta-imagen {
             position: relative;
+            display: block;
             aspect-ratio: 3 / 4;
+            overflow: hidden;
             background: var(--fondo-alt);
+            text-decoration: none;
+            cursor: pointer;
         }
+        .tarjeta-imagen:focus-visible {
+            outline: 3px solid var(--azul-claro);
+            outline-offset: -3px;
+        }
+        /* La foto real queda por encima; si carga, tapa el fondo neutro. */
         .tarjeta-imagen img {
+            position: relative;
+            z-index: 1;
             width: 100%;
             height: 100%;
             object-fit: cover;
             display: block;
+            transition: transform 0.35s ease;
         }
-        .tarjeta-imagen .sin-imagen {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #b4bdc9;
-        }
-        .tarjeta-imagen .sin-imagen i,
-        .tarjeta-imagen .sin-imagen svg { width: 40px; height: 40px; }
+        .tarjeta-imagen:hover img { transform: scale(1.04); }
 
         .etiqueta-categoria {
             align-self: flex-start;
@@ -289,6 +292,56 @@
             font-weight: 800;
             line-height: 1.3;
             color: var(--azul-oscuro);
+        }
+        .tarjeta-cuerpo .tarjeta-titulo {
+            color: inherit;
+            text-decoration: none;
+        }
+        .tarjeta-cuerpo .tarjeta-titulo:hover {
+            color: var(--azul-medio);
+            text-decoration: underline;
+            text-underline-offset: 3px;
+            text-decoration-thickness: 2px;
+        }
+        .tarjeta-cuerpo .tarjeta-titulo:focus-visible {
+            outline: 3px solid var(--azul-claro);
+            outline-offset: 3px;
+            border-radius: 4px;
+        }
+
+        /* Tarjeta SIN imagen: sin cuadrado gris, va directo el contenido.
+           Título grande arriba y la línea + datos (hora, lugar, entrada)
+           apoyados en el pie de la card. */
+        .tarjeta-sin-imagen .tarjeta-cuerpo h3 {
+            font-size: 1.5rem;
+            line-height: 1.15;
+        }
+        .tarjeta-sin-imagen .etiqueta-categoria {
+            font-size: 0.78rem;
+            padding: 0.3rem 0.85rem;
+        }
+        .tarjeta-sin-imagen .tarjeta-descripcion {
+            -webkit-line-clamp: 4;
+        }
+        /* La línea + los datos (hora, lugar, entrada) quedan apoyados en el
+           pie de la card, como en las demás. */
+        .tarjeta-sin-imagen .tarjeta-separador {
+            margin-top: auto;
+        }
+        .tarjeta-sin-imagen a.ir-pagina {
+            margin-top: 0.9rem;
+        }
+
+        /* Descripción corta: se recorta a 3 líneas para que todas las
+           tarjetas midan parecido, sin importar el largo del texto. */
+        .tarjeta-descripcion {
+            font-size: 0.9rem;
+            color: var(--texto-suave);
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
 
         .tarjeta-separador {
@@ -366,6 +419,152 @@
         footer strong { color: #ffffff; }
         footer .organismo { opacity: 0.75; margin-top: 0.2rem; font-size: 0.8rem; }
 
+        /* ---------------- Botón flotante "Solicitar un evento" ----------------
+           Vive fuera del flujo (position: fixed) así queda siempre visible, sin
+           importar si el usuario sube, baja o cambia de sección. Solo aparece
+           si el panel admin prendió el interruptor de solicitudes. */
+        .fab-solicitar {
+            position: fixed;
+            right: 1.25rem;
+            bottom: 1.25rem;
+            z-index: 50;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--verde);
+            color: #ffffff;
+            border: none;
+            border-radius: 999px;
+            padding: 0.85rem 1.3rem;
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(13, 31, 60, 0.28);
+            transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .fab-solicitar:hover {
+            background: #14602f;
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(13, 31, 60, 0.36);
+        }
+        .fab-solicitar i,
+        .fab-solicitar svg { width: 19px; height: 19px; }
+
+        /* ------------ Modal del formulario de solicitud ------------ */
+        .modal-solicitud {
+            position: fixed;
+            inset: 0;
+            margin: auto;
+            border: none;
+            border-radius: 16px;
+            padding: 0;
+            width: min(560px, calc(100vw - 2rem));
+            max-height: calc(100vh - 2rem);
+            box-shadow: 0 24px 60px rgba(13, 31, 60, 0.35);
+        }
+        .modal-solicitud::backdrop {
+            background: rgba(13, 31, 60, 0.55);
+            backdrop-filter: blur(2px);
+        }
+        .modal-solicitud form {
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+            padding: 1.5rem;
+            max-height: calc(100vh - 2rem);
+            overflow-y: auto;
+        }
+        .modal-cabecera {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+        .modal-cabecera h2 {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--azul-oscuro);
+        }
+        .modal-cabecera .cerrar {
+            background: none;
+            border: none;
+            font-size: 1.7rem;
+            line-height: 1;
+            color: var(--texto-suave);
+            cursor: pointer;
+            padding: 0.2rem;
+        }
+        .modal-cabecera .cerrar:hover { color: var(--azul-oscuro); }
+        .modal-ayuda {
+            color: var(--texto-suave);
+            font-size: 0.9rem;
+            margin-top: -0.4rem;
+        }
+        .campo { display: flex; flex-direction: column; gap: 0.3rem; }
+        .campo label {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--azul-medio);
+        }
+        .campo input,
+        .campo textarea {
+            font-family: inherit;
+            font-size: 0.92rem;
+            padding: 0.55rem 0.7rem;
+            border: 1px solid var(--borde);
+            border-radius: 8px;
+            color: var(--texto);
+            background: var(--superficie);
+            outline: none;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .campo input:focus,
+        .campo textarea:focus {
+            border-color: var(--azul-claro);
+            box-shadow: 0 0 0 3px rgba(43, 90, 158, 0.15);
+        }
+        .campos-fila { display: flex; gap: 0.75rem; }
+        .campos-fila .campo { flex: 1; }
+        .hp {
+            position: absolute;
+            left: -9999px;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+        }
+        .boton-enviar {
+            margin-top: 0.4rem;
+            background: var(--azul-medio);
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            padding: 0.85rem;
+            font-family: inherit;
+            font-weight: 800;
+            font-size: 0.98rem;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        .boton-enviar:hover { background: var(--azul-claro); }
+
+        .solicitud-ok,
+        .solicitud-error {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.7rem 0.9rem;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+        .solicitud-ok { background: #e6f4ea; color: #14602f; }
+        .solicitud-error { background: #fdecea; color: #a12622; }
+        .solicitud-ok i,
+        .solicitud-error i,
+        .solicitud-ok svg,
+        .solicitud-error svg { width: 18px; height: 18px; flex-shrink: 0; }
+
         @media (max-width: 640px) {
             .filtros { padding-top: 1.25rem; }
             .grilla { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 1.1rem; }
@@ -440,7 +639,10 @@
     </section>
 
     {# ---------- Eventos agrupados por día ---------- #}
+    {# #evento-detalle es el "hueco" que htmx reemplaza para mostrar el detalle
+       de un evento sin recargar la página, y de donde se vuelve a la agenda. #}
     <main>
+        <div id="evento-detalle">
         {% if agrupados %}
             {% for fecha, lista in agrupados %}
             <section class="grupo">
@@ -449,18 +651,40 @@
                 </h2>
                 <div class="grilla">
                     {% for evento in lista %}
-                    <article class="tarjeta">
-                        <div class="tarjeta-imagen">
-                            {% if evento.imagen_url %}
-                            <img src="{{ evento.imagen_url }}" alt="{{ evento.titulo }}" loading="lazy">
-                            {% else %}
-                            <div class="sin-imagen"><i data-lucide="image-off"></i></div>
-                            {% endif %}
-                        </div>
+                    <article class="tarjeta{% if not evento.imagen_url %} tarjeta-sin-imagen{% endif %}">
+                        {# Sin imagen la tarjeta NO muestra ningún bloque gris:
+                           arranca directo con el título grande y la info. #}
+                        {% if evento.imagen_url %}
+                        <a
+                            class="tarjeta-imagen"
+                            href="/eventos/{{ evento.id }}"
+                            hx-get="/eventos/{{ evento.id }}"
+                            hx-target="#evento-detalle"
+                            hx-swap="innerHTML"
+                            hx-push-url="true"
+                            aria-label="Ver detalle de {{ evento.titulo }}">
+                            <img
+                                src="{{ evento.imagen_url }}"
+                                alt="{{ evento.titulo }}"
+                                loading="lazy"
+                                onerror="this.remove()">
+                        </a>
+                        {% endif %}
 
                         <div class="tarjeta-cuerpo">
                             <span class="etiqueta-categoria">{{ categoria_bonita(evento.categoria) or "Evento" }}</span>
-                            <h3>{{ evento.titulo }}</h3>
+                            <h3>
+                                <a
+                                    class="tarjeta-titulo"
+                                    href="/eventos/{{ evento.id }}"
+                                    hx-get="/eventos/{{ evento.id }}"
+                                    hx-target="#evento-detalle"
+                                    hx-swap="innerHTML"
+                                    hx-push-url="true">{{ evento.titulo }}</a>
+                            </h3>
+                            {% if evento.descripcion %}
+                            <p class="tarjeta-descripcion">{{ evento.descripcion }}</p>
+                            {% endif %}
                             <div class="tarjeta-separador"></div>
                             <div class="tarjeta-datos">
                                 <div class="dato">
@@ -496,11 +720,92 @@
         {% else %}
             <p class="sin-resultados">No encontramos eventos con esos filtros. Probá de nuevo.</p>
         {% endif %}
+        </div>
     </main>
+
+    {# ---------- Solicitar un evento (solo si el admin lo habilitó) ---------- #}
+    {% if solicitudes_activas %}
+    <button
+        class="fab-solicitar"
+        type="button"
+        onclick="document.getElementById('modal-solicitud').showModal()">
+        <i data-lucide="plus"></i>
+        <span>Solicitar un evento</span>
+    </button>
+
+    <dialog id="modal-solicitud" class="modal-solicitud">
+        <form
+            hx-post="/solicitudes"
+            hx-target="#solicitud-respuesta"
+            hx-swap="innerHTML"
+            hx-encoding="multipart/form-data">
+            <div class="modal-cabecera">
+                <h2>Solicitar un evento</h2>
+                <button
+                    type="button"
+                    class="cerrar"
+                    aria-label="Cerrar"
+                    onclick="document.getElementById('modal-solicitud').close()">×</button>
+            </div>
+            <p class="modal-ayuda">Contanos los datos del evento y el equipo de la agenda lo revisa.</p>
+            <div id="solicitud-respuesta"></div>
+
+            <div class="campo">
+                <label for="sol-titulo">Título *</label>
+                <input id="sol-titulo" name="titulo" required maxlength="140" placeholder="Ej: Tango en el Puerto">
+            </div>
+
+            <div class="campos-fila">
+                <div class="campo">
+                    <label for="sol-fecha">Fecha *</label>
+                    <input id="sol-fecha" type="date" name="fecha" required>
+                </div>
+                <div class="campo">
+                    <label for="sol-hora">Hora</label>
+                    <input id="sol-hora" type="time" name="hora">
+                </div>
+            </div>
+
+            <div class="campo">
+                <label for="sol-lugar">Lugar</label>
+                <input id="sol-lugar" name="lugar" maxlength="140" placeholder="Ej: Plaza San Martín">
+            </div>
+            <div class="campo">
+                <label for="sol-categoria">Categoría</label>
+                <input id="sol-categoria" name="categoria" maxlength="60" placeholder="Música, teatro, cine...">
+            </div>
+            <div class="campo">
+                <label for="sol-precio">Precio</label>
+                <input id="sol-precio" name="precio" maxlength="80" placeholder="Gratis o desde $...">
+            </div>
+            <div class="campo">
+                <label for="sol-descripcion">Descripción</label>
+                <textarea id="sol-descripcion" name="descripcion" rows="3" maxlength="1200"></textarea>
+            </div>
+            <div class="campo">
+                <label for="sol-link">Link (opcional)</label>
+                <input id="sol-link" type="url" name="link_fuente" maxlength="300" placeholder="https://...">
+            </div>
+            <div class="campo">
+                <label for="sol-contacto">Tu contacto (opcional)</label>
+                <input id="sol-contacto" name="contacto" maxlength="140" placeholder="Email o teléfono">
+            </div>
+            <div class="campo">
+                <label for="sol-imagen">Imagen (opcional, máx. 6 MB)</label>
+                <input id="sol-imagen" type="file" name="imagen" accept="image/*">
+            </div>
+
+            {# Trampa anti-spam: invisible para las personas, los bots la rellenan. #}
+            <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+
+            <button type="submit" class="boton-enviar">Enviar solicitud</button>
+        </form>
+    </dialog>
+    {% endif %}
 
     <footer>
         <strong>¿Salimos?</strong> · Agenda cultural de Berisso
-        <div class="organismo">Municipalidad de Berisso</div>
+        <div class="organismo">Proyecto berissense</div>
     </footer>
 
     {# Lucide reemplaza los <i data-lucide> por SVGs al cargar. #}

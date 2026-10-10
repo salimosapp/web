@@ -1,0 +1,10 @@
+{% if ok %}
+<div class="solicitud-ok"><i data-lucide="check-circle"></i> <span>{{ mensaje }}</span></div>
+<script>
+    // Si vino bien, dejamos el formulario limpio para la próxima solicitud.
+    var form = document.querySelector("#modal-solicitud form");
+    if (form) form.reset();
+</script>
+{% else %}
+<div class="solicitud-error"><i data-lucide="alert-circle"></i> <span>{{ mensaje }}</span></div>
+{% endif %}

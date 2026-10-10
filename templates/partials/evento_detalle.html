@@ -1,10 +1,16 @@
-<button class="volver" hx-get="/" hx-target="body" hx-swap="outerHTML" hx-push-url="true">
+<button
+    class="volver"
+    hx-get="/"
+    hx-target="body"
+    hx-swap="outerHTML"
+    hx-push-url="true"
+    hx-on::after-swap="window.scrollTo(0, 0)">
     ← Volver a la agenda
 </button>
 
 <article class="detalle">
     {% if evento.imagen_url %}
-    <img src="{{ evento.imagen_url }}" alt="{{ evento.titulo }}">
+    <img src="{{ evento.imagen_url }}" alt="{{ evento.titulo }}" onerror="this.remove()">
     {% endif %}
 
     <div class="cuerpo">
