@@ -100,6 +100,22 @@ def root():
     )
 
 
+@app.route("/mis-recordatorios")
+def mis_recordatorios():
+    """Página con los eventos guardados en localStorage."""
+    return render_template(
+        "index.html",
+        pagina="recordatorios",
+        agrupados=[],
+        categorias=obtener_categorias(),
+        dias=obtener_dias(),
+        categoria_activa="",
+        dia_activo="",
+        busqueda="",
+        solicitudes_activas=solicitudes_habilitadas(),
+    )
+
+
 @app.route("/eventos/<int:evento_id>")
 def evento_detalle(evento_id: int):
     """

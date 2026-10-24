@@ -76,6 +76,26 @@
             opacity: 0.88;
         }
 
+        .hero-nav {
+            margin-top: 1.2rem;
+            display: flex;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .hero-nav-link {
+            background: rgba(255,255,255,0.15);
+            color: #ffffff;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 700;
+            backdrop-filter: blur(4px);
+            transition: background 0.15s ease;
+        }
+        .hero-nav-link:hover { background: rgba(255,255,255,0.25); }
+        .hero-nav-link.active { background: rgba(255,255,255,0.35); }
+
         /* ---------------- Sección de filtros ---------------- */
         .filtros {
             max-width: 1180px;
@@ -188,6 +208,22 @@
         .limpiar-filtros:hover { color: var(--azul-medio); border-bottom-color: currentColor; }
         .limpiar-filtros i,
         .limpiar-filtros svg { width: 16px; height: 16px; }
+
+        .recordatorio-btn {
+            background: var(--superficie);
+            border: 1px solid var(--borde);
+            border-radius: 999px;
+            width: 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.15s ease, box-shadow 0.15s ease;
+        }
+        .recordatorio-btn:hover { background: var(--fondo); box-shadow: var(--sombra); }
+        .recordatorio-btn.active { background: var(--celeste-palido); }
 
         /* ---------------- Contenido principal ---------------- */
         main {
@@ -576,8 +612,12 @@
     {# ---------- Header / Hero ---------- #}
     <header class="hero">
         <div>
-            <h1>¿Salimos?</h1>
+            <h1>¡Salimos?</h1>
             <p>La agenda cultural de Berisso, en un solo lugar</p>
+            <div class="hero-nav">
+                <a class="hero-nav-link{% if pagina == 'inicio' %} active{% endif %}" href="/">Eventos</a>
+                <a class="hero-nav-link{% if pagina == 'recordatorios' %} active{% endif %}" href="/mis-recordatorios">Mis recordatorios <span id="nav-recordatorios-count"></span></a>
+            </div>
         </div>
     </header>
 
@@ -643,7 +683,14 @@
        de un evento sin recargar la página, y de donde se vuelve a la agenda. #}
     <main>
         <div id="evento-detalle">
-        {% if agrupados %}
+        {% if pagina == 'recordatorios' %}
+            <section class="grupo">
+                <h2 class="grupo-titulo">Mis recordatorios</h2>
+                <p style="color:var(--texto-suave); margin-bottom:1rem;">Guardados en este navegador.</p>
+                <div id="recordatorios-lista" class="grilla"></div>
+                <p id="recordatorios-vacio" class="sin-resultados" style="display:none;">No tenés recordatorios guardados.</p>
+            </section>
+        {% elif agrupados %}
             {% for fecha, lista in agrupados %}
             <section class="grupo">
                 <h2 class="grupo-titulo">
@@ -651,9 +698,9 @@
                 </h2>
                 <div class="grilla">
                     {% for evento in lista %}
-                    <article class="tarjeta{% if not evento.imagen_url %} tarjeta-sin-imagen{% endif %}">
-                        {# Sin imagen la tarjeta NO muestra ningún bloque gris:
-                           arranca directo con el título grande y la info. #}
+                    <article class="tarjeta{% if not evento.imagen_url %} tarjeta-sin-imagen{% endif %}" data-evento-id="{{ evento.id }}">
+                        {# Sin imagen la tarjeta NO muestra ning�n bloque gris:
+                           arranca directo con el t�tulo grande y la info. #}
                         {% if evento.imagen_url %}
                         <a
                             class="tarjeta-imagen"
@@ -672,7 +719,10 @@
                         {% endif %}
 
                         <div class="tarjeta-cuerpo">
-                            <span class="etiqueta-categoria">{{ categoria_bonita(evento.categoria) or "Evento" }}</span>
+                            <div style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem;">
+                                <span class="etiqueta-categoria">{{ categoria_bonita(evento.categoria) or "Evento" }}</span>
+                                <button type="button" class="recordatorio-btn" data-id="{{ evento.id }}" aria-label="Guardar en mis recordatorios" title="Guardar en mis recordatorios">🔔</button>
+                            </div>
                             <h3>
                                 <a
                                     class="tarjeta-titulo"
@@ -810,12 +860,191 @@
 
     {# Lucide reemplaza los <i data-lucide> por SVGs al cargar. #}
     <script>
+        const RECORDATORIOS_KEY = 'salimos_recordatorios';
+
+        function getRecordatorios() {
+            try {
+                const raw = localStorage.getItem(RECORDATORIOS_KEY);
+                if (!raw) return [];
+                const parsed = JSON.parse(raw);
+                return Array.isArray(parsed) ? parsed.map(x => String(x)) : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveRecordatorios(ids) {
+            try {
+                localStorage.setItem(RECORDATORIOS_KEY, JSON.stringify(ids));
+            } catch (e) {}
+            updateNavCount();
+        }
+
+        function updateNavCount() {
+            const count = getRecordatorios().length;
+            const el = document.getElementById('nav-recordatorios-count');
+            if (el) {
+                el.textContent = count ? '(' + count + ')' : '';
+            }
+        }
+
+        function syncRecordatorioButtons() {
+            const ids = getRecordatorios();
+            document.querySelectorAll('.recordatorio-btn').forEach(btn => {
+                const id = String(btn.dataset.id);
+                if (ids.includes(id)) {
+                    btn.classList.add('active');
+                    btn.textContent = '🔕';
+                    btn.title = 'Quitar de mis recordatorios';
+                    btn.setAttribute('aria-label', 'Quitar de mis recordatorios');
+                } else {
+                    btn.classList.remove('active');
+                    btn.textContent = '🔔';
+                    btn.title = 'Guardar en mis recordatorios';
+                    btn.setAttribute('aria-label', 'Guardar en mis recordatorios');
+                }
+            });
+        }
+
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.recordatorio-btn');
+            if (!btn) return;
+            e.preventDefault();
+            e.stopPropagation();
+            const id = String(btn.dataset.id);
+            let ids = getRecordatorios();
+            if (ids.includes(id)) {
+                ids = ids.filter(x => x !== id);
+            } else {
+                ids.push(id);
+            }
+            saveRecordatorios(ids);
+            syncRecordatorioButtons();
+        });
+
+        function generarICS(evento) {
+            const titulo = (evento.titulo || 'Evento').replace(/\r?\n/g, ' ').replace(/[,;]/g, ' ');
+            const descripcion = (evento.descripcion || '').replace(/\r?\n/g, '\\n').replace(/[,;]/g, ' ');
+            const lugar = (evento.lugar || '').replace(/\r?\n/g, ' ').replace(/[,;]/g, ' ');
+            const fecha = new Date(evento.fecha_hora_iso || evento.fecha_hora);
+            function pad(n){ return n < 10 ? '0' + n : '' + n; }
+            function formatICal(d){
+                return d.getUTCFullYear() + pad(d.getUTCMonth()+1) + pad(d.getUTCDate()) + 'T' + pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + pad(d.getUTCSeconds()) + 'Z';
+            }
+            const now = formatICal(new Date());
+            const dtstart = formatICal(fecha);
+            const dtend = formatICal(new Date(fecha.getTime() + 2*60*60*1000));
+            const uid = 'salimos-' + evento.id + '-' + Date.now() + '@berisso';
+            let ics = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Salimos//Agenda//ES\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\nBEGIN:VEVENT\r\nUID:' + uid + '\r\nDTSTAMP:' + now + '\r\nDTSTART:' + dtstart + '\r\nDTEND:' + dtend + '\r\nSUMMARY:' + titulo + '\r\n';
+            if (lugar) ics += 'LOCATION:' + lugar + '\r\n';
+            if (descripcion) ics += 'DESCRIPTION:' + descripcion.replace(/\\n/g, '\\n') + '\r\n';
+            ics += 'END:VEVENT\r\nEND:VCALENDAR';
+            return ics;
+        }
+
+        function descargarICS(evento) {
+            try {
+                const ics = generarICS(evento);
+                const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = (evento.titulo || 'evento').replace(/[^a-z0-9]+/gi, '_').toLowerCase() + '.ics';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            } catch (e) {}
+        }
+
+        async function cargarRecordatorios() {
+            const lista = document.getElementById('recordatorios-lista');
+            const vacio = document.getElementById('recordatorios-vacio');
+            if (!lista) return;
+            const ids = getRecordatorios();
+            if (ids.length === 0) {
+                lista.innerHTML = '';
+                if (vacio) vacio.style.display = 'block';
+                return;
+            }
+            if (vacio) vacio.style.display = 'none';
+            lista.innerHTML = '<p style="color:var(--texto-suave);">Cargando...</p>';
+            try {
+                const eventos = [];
+                for (const id of ids) {
+                    try {
+                        const res = await fetch('/eventos/' + id + '?partial=1', { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                        if (res.ok) {
+                            const html = await res.text();
+                            const parser = new DOMParser();
+                            const doc = parser.parseFromString(html, 'text/html');
+                            // try to extract basic info from detail partial
+                            const tituloEl = doc.querySelector('h1, h2, .evento-titulo');
+                            const titulo = tituloEl ? tituloEl.textContent.trim() : '';
+                            const fechaEl = doc.querySelector('[data-fecha], .fecha, time');
+                            const lugarEl = doc.querySelector('.lugar, [data-lugar]');
+                            const descEl = doc.querySelector('.descripcion, p');
+                            const imgEl = doc.querySelector('img');
+                            eventos.push({
+                                id: id,
+                                titulo: titulo,
+                                fecha_hora_iso: fechaEl ? (fechaEl.getAttribute('datetime') || fechaEl.textContent) : '',
+                                lugar: lugarEl ? lugarEl.textContent.trim() : '',
+                                descripcion: descEl ? descEl.textContent.trim() : '',
+                                imagen_url: imgEl ? imgEl.getAttribute('src') : ''
+                            });
+                        }
+                    } catch (e) {}
+                }
+                if (eventos.length === 0) {
+                    lista.innerHTML = '';
+                    if (vacio) vacio.style.display = 'block';
+                    return;
+                }
+                lista.innerHTML = '';
+                for (const ev of eventos) {
+                    const art = document.createElement('article');
+                    art.className = 'tarjeta';
+                    art.innerHTML = `
+                        <div class="tarjeta-cuerpo">
+                            <div style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem;">
+                                <span class="etiqueta-categoria">Evento</span>
+                                <button type="button" class="recordatorio-btn active" data-id="${ev.id}" aria-label="Quitar de mis recordatorios">🔕</button>
+                            </div>
+                            <h3><span class="tarjeta-titulo">${ev.titulo.replace(/</g,'&lt;')}</span></h3>
+                            ${ev.descripcion ? '<p class="tarjeta-descripcion">' + ev.descripcion.replace(/</g,'&lt;') + '</p>' : ''}
+                            <div class="tarjeta-separador"></div>
+                            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                                <button type="button" class="ir-pagina" style="border:none; background:none; cursor:pointer;" onclick='descargarICS(${JSON.stringify(ev).replace(/'/g,"&#39;")})'>Agregar al calendario <i data-lucide="calendar-plus"></i></button>
+                            </div>
+                        </div>
+                    `;
+                    lista.appendChild(art);
+                }
+                if (window.lucide) lucide.createIcons();
+                syncRecordatorioButtons();
+            } catch (e) {
+                lista.innerHTML = '';
+                if (vacio) vacio.style.display = 'block';
+            }
+        }
+
         if (window.lucide) lucide.createIcons();
 
-        // Si htmx inyecta contenido nuevo (detalle de evento), regeneramos iconos.
         document.addEventListener("htmx:afterSwap", function () {
             if (window.lucide) lucide.createIcons();
+            syncRecordatorioButtons();
+            updateNavCount();
+            cargarRecordatorios();
         });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            syncRecordatorioButtons();
+            updateNavCount();
+            cargarRecordatorios();
+        });
+        updateNavCount();
+        cargarRecordatorios();
     </script>
 </body>
 </html>
