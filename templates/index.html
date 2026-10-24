@@ -219,11 +219,12 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            font-size: 1rem;
-            transition: background 0.15s ease, box-shadow 0.15s ease;
+            transition: background 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
+            color: var(--azul-medio);
         }
-        .recordatorio-btn:hover { background: var(--fondo); box-shadow: var(--sombra); }
-        .recordatorio-btn.active { background: var(--celeste-palido); }
+        .recordatorio-btn:hover { background: var(--fondo); box-shadow: var(--sombra); color: var(--azul-claro); }
+        .recordatorio-btn.active { background: var(--celeste-palido); color: var(--azul-medio); }
+        .recordatorio-btn svg { width: 18px; height: 18px; }
 
         /* ---------------- Contenido principal ---------------- */
         main {
@@ -658,17 +659,20 @@
         </nav>
 
         {# Buscador (conserva los filtros de categoría y día) #}
-        <form class="buscador" method="get" action="/" role="search">
+        <div style="width:100%; max-width:450px; display:flex; align-items:center; gap:0.5rem;">
+            <form class="buscador" method="get" action="/" role="search" style="flex:1;">
             <input type="hidden" name="categoria" value="{{ categoria_activa }}">
             <input type="hidden" name="dia" value="{{ dia_activo }}">
             <input
                 type="search"
                 name="q"
                 value="{{ busqueda }}"
-                placeholder="Buscar por nombre, lugar o categoría"
+                placeholder="Buscar por nombre, lugar o categor�a"
                 aria-label="Buscar eventos">
             <button type="submit" aria-label="Buscar"><i data-lucide="search"></i></button>
-        </form>
+            </form>
+            <button type="button" class="recordatorio-btn" data-id="global" id="global-recordatorio-btn" aria-label="Guardar en mis recordatorios" title="Guardar en mis recordatorios"><i data-lucide="bell"></i></button>
+        </div>
 
         {# Salida de emergencia: aparece con cualquier filtro puesto y limpia todo. #}
         {% if categoria_activa or dia_activo or busqueda %}
@@ -702,6 +706,7 @@
                         {# Sin imagen la tarjeta NO muestra ning�n bloque gris:
                            arranca directo con el t�tulo grande y la info. #}
                         {% if evento.imagen_url %}
+                        <div style="position:relative;">
                         <a
                             class="tarjeta-imagen"
                             href="/eventos/{{ evento.id }}"
@@ -716,12 +721,17 @@
                                 loading="lazy"
                                 onerror="this.remove()">
                         </a>
+                        <button type="button" class="recordatorio-btn" data-id="{{ evento.id }}" aria-label="Guardar en mis recordatorios" title="Guardar en mis recordatorios" style="position:absolute; top:8px; right:8px; z-index:2;"><i data-lucide="bell"></i></button>
+                        </div>
+                        {% else %}
+                        <div style="display:flex; justify-content:flex-end; padding:0.5rem 0.6rem 0 0;">
+                            <button type="button" class="recordatorio-btn" data-id="{{ evento.id }}" aria-label="Guardar en mis recordatorios" title="Guardar en mis recordatorios"><i data-lucide="bell"></i></button>
+                        </div>
                         {% endif %}
 
                         <div class="tarjeta-cuerpo">
                             <div style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem;">
                                 <span class="etiqueta-categoria">{{ categoria_bonita(evento.categoria) or "Evento" }}</span>
-                                <button type="button" class="recordatorio-btn" data-id="{{ evento.id }}" aria-label="Guardar en mis recordatorios" title="Guardar en mis recordatorios">🔔</button>
                             </div>
                             <h3>
                                 <a
@@ -891,18 +901,35 @@
         function syncRecordatorioButtons() {
             const ids = getRecordatorios();
             document.querySelectorAll('.recordatorio-btn').forEach(btn => {
-                const id = String(btn.dataset.id);
+                if (btn.id === 'global-recordatorio-btn' || btn.dataset.id === 'global') {
+                    if (ids.includes('global')) {
+                        btn.classList.add('active');
+                        btn.innerHTML = '<i data-lucide="bell-off"></i>';
+                        btn.title = 'Quitar recordatorios globales';
+                        btn.setAttribute('aria-label', 'Quitar recordatorios globales');
+                    } else {
+                        btn.classList.remove('active');
+                        btn.innerHTML = '<i data-lucide="bell"></i>';
+                        btn.title = 'Guardar en mis recordatorios';
+                        btn.setAttribute('aria-label', 'Guardar en mis recordatorios');
+                    }
+                    if (window.lucide) lucide.createIcons();
+                    return;
+                }
+                const id = String(btn.dataset.id || '');
+                if (!id) return;
                 if (ids.includes(id)) {
                     btn.classList.add('active');
-                    btn.textContent = '🔕';
+                    btn.innerHTML = '<i data-lucide="bell-off"></i>';
                     btn.title = 'Quitar de mis recordatorios';
                     btn.setAttribute('aria-label', 'Quitar de mis recordatorios');
                 } else {
                     btn.classList.remove('active');
-                    btn.textContent = '🔔';
+                    btn.innerHTML = '<i data-lucide="bell"></i>';
                     btn.title = 'Guardar en mis recordatorios';
                     btn.setAttribute('aria-label', 'Guardar en mis recordatorios');
                 }
+                if (window.lucide) lucide.createIcons();
             });
         }
 
@@ -911,7 +938,9 @@
             if (!btn) return;
             e.preventDefault();
             e.stopPropagation();
-            const id = String(btn.dataset.id);
+            let id = String(btn.dataset.id || '');
+            if (!id && btn.id === 'global-recordatorio-btn') id = 'global';
+            if (!id) return;
             let ids = getRecordatorios();
             if (ids.includes(id)) {
                 ids = ids.filter(x => x !== id);
@@ -920,6 +949,7 @@
             }
             saveRecordatorios(ids);
             syncRecordatorioButtons();
+            cargarRecordatorios();
         });
 
         function generarICS(evento) {
@@ -1009,7 +1039,7 @@
                         <div class="tarjeta-cuerpo">
                             <div style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem;">
                                 <span class="etiqueta-categoria">Evento</span>
-                                <button type="button" class="recordatorio-btn active" data-id="${ev.id}" aria-label="Quitar de mis recordatorios">🔕</button>
+                                <button type="button" class="recordatorio-btn active" data-id="${ev.id}" aria-label="Quitar de mis recordatorios"><i data-lucide="bell-off"></i></button>
                             </div>
                             <h3><span class="tarjeta-titulo">${ev.titulo.replace(/</g,'&lt;')}</span></h3>
                             ${ev.descripcion ? '<p class="tarjeta-descripcion">' + ev.descripcion.replace(/</g,'&lt;') + '</p>' : ''}
@@ -1044,6 +1074,7 @@
             cargarRecordatorios();
         });
         updateNavCount();
+        syncRecordatorioButtons();
         cargarRecordatorios();
     </script>
 </body>
