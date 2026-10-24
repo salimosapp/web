@@ -615,10 +615,6 @@
         <div>
             <h1>¡Salimos?</h1>
             <p>La agenda cultural de Berisso, en un solo lugar</p>
-            <div class="hero-nav">
-                <a class="hero-nav-link{% if pagina == 'inicio' %} active{% endif %}" href="/">Eventos</a>
-                <a class="hero-nav-link{% if pagina == 'recordatorios' %} active{% endif %}" href="/mis-recordatorios">Mis recordatorios <span id="nav-recordatorios-count"></span></a>
-            </div>
         </div>
     </header>
 
@@ -659,7 +655,7 @@
         </nav>
 
         {# Buscador (conserva los filtros de categoría y día) #}
-        <div style="width:100%; max-width:450px; display:flex; align-items:center; gap:0.5rem;">
+        <div style="width:100%; max-width:400px; display:flex; align-items:center;">
             <form class="buscador" method="get" action="/" role="search" style="flex:1;">
             <input type="hidden" name="categoria" value="{{ categoria_activa }}">
             <input type="hidden" name="dia" value="{{ dia_activo }}">
@@ -667,11 +663,14 @@
                 type="search"
                 name="q"
                 value="{{ busqueda }}"
-                placeholder="Buscar por nombre, lugar o categor�a"
+                placeholder="Buscar"
                 aria-label="Buscar eventos">
             <button type="submit" aria-label="Buscar"><i data-lucide="search"></i></button>
             </form>
-            <button type="button" class="recordatorio-btn" data-id="global" id="global-recordatorio-btn" aria-label="Guardar en mis recordatorios" title="Guardar en mis recordatorios"><i data-lucide="bell"></i></button>
+        </div>
+        <div class="hero-nav" style="margin-top:0.8rem;">
+            <a class="hero-nav-link{% if pagina == 'inicio' %} active{% endif %}" href="/">Eventos</a>
+            <a class="hero-nav-link{% if pagina == 'recordatorios' %} active{% endif %}" href="/mis-recordatorios">Mis recordatorios <span id="nav-recordatorios-count"></span></a>
         </div>
 
         {# Salida de emergencia: aparece con cualquier filtro puesto y limpia todo. #}
