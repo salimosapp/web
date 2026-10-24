@@ -84,17 +84,22 @@
             justify-content: center;
         }
         .hero-nav-link {
-            background: rgba(255,255,255,0.15);
-            color: #ffffff;
             text-decoration: none;
-            padding: 0.5rem 1rem;
+            background: var(--superficie);
+            color: var(--azul-medio);
             border-radius: 8px;
+            padding: 0.5rem 1.25rem;
             font-weight: 700;
-            backdrop-filter: blur(4px);
-            transition: background 0.15s ease;
+            font-size: 0.92rem;
+            box-shadow: var(--sombra);
+            border: 1px solid transparent;
+            transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
         }
-        .hero-nav-link:hover { background: rgba(255,255,255,0.25); }
-        .hero-nav-link.active { background: rgba(255,255,255,0.35); }
+        .hero-nav-link:hover { color: var(--azul-claro); box-shadow: var(--sombra-hover); }
+        .hero-nav-link.active {
+            background: var(--azul-medio);
+            color: #ffffff;
+        }
 
         /* ---------------- Sección de filtros ---------------- */
         .filtros {
@@ -613,7 +618,7 @@
     {# ---------- Header / Hero ---------- #}
     <header class="hero">
         <div>
-            <h1>¡Salimos?</h1>
+            <h1>¿Salimos?</h1>
             <p>La agenda cultural de Berisso, en un solo lugar</p>
         </div>
     </header>
@@ -1008,19 +1013,19 @@
                             const parser = new DOMParser();
                             const doc = parser.parseFromString(html, 'text/html');
                             // try to extract basic info from detail partial
-                            const tituloEl = doc.querySelector('h1, h2, .evento-titulo');
+                            const tituloEl = doc.querySelector('h1, h2, .evento-titulo, .tarjeta-titulo');
                             const titulo = tituloEl ? tituloEl.textContent.trim() : '';
                             const fechaEl = doc.querySelector('[data-fecha], .fecha, time');
                             const lugarEl = doc.querySelector('.lugar, [data-lugar]');
-                            const descEl = doc.querySelector('.descripcion, p');
-                            const imgEl = doc.querySelector('img');
+                            const descEl = doc.querySelector('.descripcion, .tarjeta-descripcion, p');
+                            const imgEl = doc.querySelector('.evento-imagen, .tarjeta-imagen img, img');
                             eventos.push({
                                 id: id,
                                 titulo: titulo,
                                 fecha_hora_iso: fechaEl ? (fechaEl.getAttribute('datetime') || fechaEl.textContent) : '',
                                 lugar: lugarEl ? lugarEl.textContent.trim() : '',
                                 descripcion: descEl ? descEl.textContent.trim() : '',
-                                imagen_url: imgEl ? imgEl.getAttribute('src') : ''
+                                imagen_url: imgEl ? (imgEl.getAttribute('src') || '') : ''
                             });
                         }
                     } catch (e) {}
@@ -1035,12 +1040,12 @@
                     const art = document.createElement('article');
                     art.className = 'tarjeta';
                     art.innerHTML = `
+                        ${ev.imagen_url ? `<div style="position:relative;"><a class="tarjeta-imagen" href="/eventos/${ev.id}" hx-get="/eventos/${ev.id}" hx-target="#evento-detalle" hx-swap="innerHTML" hx-push-url="true" aria-label="Ver detalle de ${ev.titulo.replace(/"/g,'&quot;')}"><img src="${ev.imagen_url.replace(/"/g,'&quot;')}" alt="${ev.titulo.replace(/"/g,'&quot;')}" loading="lazy" onerror="this.remove()"></a><button type="button" class="recordatorio-btn active" data-id="${ev.id}" aria-label="Quitar de mis recordatorios" style="position:absolute; top:8px; right:8px; z-index:2;"><i data-lucide="bell-off"></i></button></div>` : `<div style="display:flex; justify-content:flex-end; padding:0.5rem 0.6rem 0 0;"><button type="button" class="recordatorio-btn active" data-id="${ev.id}" aria-label="Quitar de mis recordatorios"><i data-lucide="bell-off"></i></button></div>`}
                         <div class="tarjeta-cuerpo">
                             <div style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem;">
                                 <span class="etiqueta-categoria">Evento</span>
-                                <button type="button" class="recordatorio-btn active" data-id="${ev.id}" aria-label="Quitar de mis recordatorios"><i data-lucide="bell-off"></i></button>
                             </div>
-                            <h3><span class="tarjeta-titulo">${ev.titulo.replace(/</g,'&lt;')}</span></h3>
+                            <h3><a class="tarjeta-titulo" href="/eventos/${ev.id}" hx-get="/eventos/${ev.id}" hx-target="#evento-detalle" hx-swap="innerHTML" hx-push-url="true">${ev.titulo.replace(/</g,'&lt;')}</a></h3>
                             ${ev.descripcion ? '<p class="tarjeta-descripcion">' + ev.descripcion.replace(/</g,'&lt;') + '</p>' : ''}
                             <div class="tarjeta-separador"></div>
                             <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
